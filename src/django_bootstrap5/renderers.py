@@ -21,6 +21,11 @@ from .text import text_value
 from .utils import render_template_file
 from .widgets import RadioSelectButtonGroup, ReadOnlyPasswordHashWidget, is_widget_with_placeholder
 
+try:
+    from betterforms.forms import MultiForm
+except ImportError:
+    MultiForm = BaseForm
+
 
 class BaseRenderer:
     """A content renderer."""
@@ -33,7 +38,9 @@ class BaseRenderer:
     def __init__(self, **kwargs):
         self.layout = kwargs.get("layout", "")
         self.wrapper_class = kwargs.get("wrapper_class", get_bootstrap_setting("wrapper_class"))
-        self.inline_wrapper_class = kwargs.get("inline_wrapper_class", get_bootstrap_setting("inline_wrapper_class"))
+        self.inline_wrapper_class = kwargs.get(
+            "inline_wrapper_class", get_bootstrap_setting("inline_wrapper_class")
+        )
         self.field_class = kwargs.get("field_class", "")
         self.label_class = kwargs.get("label_class", "")
         self.show_help = kwargs.get("show_help", True)
@@ -47,12 +54,16 @@ class BaseRenderer:
         self.horizontal_field_class = kwargs.get(
             "horizontal_field_class", get_bootstrap_setting("horizontal_field_class")
         )
-        self.checkbox_layout = kwargs.get("checkbox_layout", get_bootstrap_setting("checkbox_layout"))
+        self.checkbox_layout = kwargs.get(
+            "checkbox_layout", get_bootstrap_setting("checkbox_layout")
+        )
         self.checkbox_style = kwargs.get("checkbox_style", get_bootstrap_setting("checkbox_style"))
         self.horizontal_field_offset_class = kwargs.get(
             "horizontal_field_offset_class", get_bootstrap_setting("horizontal_field_offset_class")
         )
-        self.inline_field_class = kwargs.get("inline_field_class", get_bootstrap_setting("inline_field_class"))
+        self.inline_field_class = kwargs.get(
+            "inline_field_class", get_bootstrap_setting("inline_field_class")
+        )
         self.server_side_validation = kwargs.get(
             "server_side_validation", get_bootstrap_setting("server_side_validation")
         )
@@ -147,14 +158,16 @@ class FormsetRenderer(BaseRenderer):
         return mark_safe("")
 
     def render(self):
-        return format_html(self.render_management_form() + "{}{}", self.render_errors(), self.render_forms())
+        return format_html(
+            self.render_management_form() + "{}{}", self.render_errors(), self.render_forms()
+        )
 
 
 class FormRenderer(BaseRenderer):
     """Default form renderer."""
 
     def __init__(self, form, **kwargs):
-        if not isinstance(form, BaseForm):
+        if not isinstance(form, BaseForm) and not isinstance(form, MultiForm):
             raise TypeError('Parameter "form" should contain a valid Django Form.')
         self.form = form
         super().__init__(**kwargs)
@@ -185,7 +198,12 @@ class FormRenderer(BaseRenderer):
         if form_errors:
             return render_template_file(
                 self.form_errors_template,
-                context={"errors": form_errors, "form": self.form, "layout": self.layout, "type": type},
+                context={
+                    "errors": form_errors,
+                    "form": self.form,
+                    "layout": self.layout,
+                    "type": type,
+                },
             )
 
         return mark_safe("")
@@ -295,7 +313,9 @@ class FieldRenderer(BaseRenderer):
         if self.is_form_control_widget(widget):
             return True
         if isinstance(widget, Select):
-            return self.size == DEFAULT_SIZE and not isinstance(widget, (SelectMultiple, RadioSelect))
+            return self.size == DEFAULT_SIZE and not isinstance(
+                widget, (SelectMultiple, RadioSelect)
+            )
         return False
 
     def add_widget_class_attrs(self, widget=None):
@@ -307,7 +327,9 @@ class FieldRenderer(BaseRenderer):
         before = []
         classes = [widget.attrs.get("class", ""), text_value(self.field_class)]
 
-        if ReadOnlyPasswordHashWidget is not None and isinstance(widget, ReadOnlyPasswordHashWidget):
+        if ReadOnlyPasswordHashWidget is not None and isinstance(
+            widget, ReadOnlyPasswordHashWidget
+        ):
             before.append("form-control-static")
         elif isinstance(widget, Select):
             before.append("form-select")
@@ -368,7 +390,9 @@ class FieldRenderer(BaseRenderer):
             elif self.is_inline:
                 widget_label_class = "visually-hidden"
             elif horizontal:
-                widget_label_class = merge_css_classes(self.horizontal_label_class, "col-form-label")
+                widget_label_class = merge_css_classes(
+                    self.horizontal_label_class, "col-form-label"
+                )
             else:
                 widget_label_class = "form-label"
             label_classes = [widget_label_class] + label_classes
@@ -487,7 +511,9 @@ class FieldRenderer(BaseRenderer):
             label = self.get_label_html()
             field = field + label
             label = mark_safe("")
-            horizontal_class = merge_css_classes(self.horizontal_field_class, self.horizontal_field_offset_class)
+            horizontal_class = merge_css_classes(
+                self.horizontal_field_class, self.horizontal_field_offset_class
+            )
         else:
             label = self.get_label_html(horizontal=self.is_horizontal)
             horizontal_class = self.horizontal_field_class
@@ -500,7 +526,9 @@ class FieldRenderer(BaseRenderer):
                 addon_before = self.addon_before
             else:
                 addon_before = (
-                    format_html('<span class="{}">{}</span>', self.addon_before_class, self.addon_before)
+                    format_html(
+                        '<span class="{}">{}</span>', self.addon_before_class, self.addon_before
+                    )
                     if self.addon_before
                     else ""
                 )
@@ -508,7 +536,9 @@ class FieldRenderer(BaseRenderer):
                 addon_after = self.addon_after
             else:
                 addon_after = (
-                    format_html('<span class="{}">{}</span>', self.addon_after_class, self.addon_after)
+                    format_html(
+                        '<span class="{}">{}</span>', self.addon_after_class, self.addon_after
+                    )
                     if self.addon_after
                     else ""
                 )
@@ -517,11 +547,20 @@ class FieldRenderer(BaseRenderer):
                 if self.server_side_validation and self.get_server_side_validation_classes():
                     classes = merge_css_classes(classes, "has-validation")
                     errors = errors or mark_safe("<div></div>")
-                field = format_html('<div class="{}">{}{}{}{}</div>', classes, addon_before, field, addon_after, errors)
+                field = format_html(
+                    '<div class="{}">{}{}{}{}</div>',
+                    classes,
+                    addon_before,
+                    field,
+                    addon_after,
+                    errors,
+                )
                 errors = ""
 
         if isinstance(self.widget, CheckboxInput):
-            field = format_html('<div class="{}">{}{}{}</div>', self.get_checkbox_classes(), field, errors, help)
+            field = format_html(
+                '<div class="{}">{}{}{}</div>', self.get_checkbox_classes(), field, errors, help
+            )
             errors = ""
             help = ""
 
