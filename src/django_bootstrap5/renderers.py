@@ -22,7 +22,7 @@ from .utils import render_template_file
 from .widgets import RadioSelectButtonGroup, ReadOnlyPasswordHashWidget, is_widget_with_placeholder
 
 try:
-    from betterforms.forms import MultiForm
+    from betterforms.multiform import MultiForm
 except ImportError:
     MultiForm = BaseForm
 
