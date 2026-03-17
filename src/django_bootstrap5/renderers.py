@@ -16,6 +16,7 @@ from django.utils.safestring import mark_safe
 from .core import get_bootstrap_setting
 from .css import merge_css_classes
 from .forms import render_field, render_form, render_label
+from .html import EMPTY_SAFE_HTML
 from .size import DEFAULT_SIZE, SIZE_MD, get_size_class, parse_size
 from .text import text_value
 from .utils import render_template_file
@@ -118,7 +119,7 @@ class BaseRenderer:
 
     def render(self):
         """Render to string."""
-        return ""
+        EMPTY_SAFE_HTML
 
 
 class FormsetRenderer(BaseRenderer):
@@ -135,7 +136,7 @@ class FormsetRenderer(BaseRenderer):
         return text_value(self.formset.management_form)
 
     def render_forms(self):
-        rendered_forms = mark_safe("")
+        rendered_forms = EMPTY_SAFE_HTML
         kwargs = self.get_kwargs()
         for form in self.formset.forms:
             rendered_forms += render_form(form, **kwargs)
@@ -155,7 +156,7 @@ class FormsetRenderer(BaseRenderer):
                     "layout": self.layout,
                 },
             )
-        return mark_safe("")
+        return EMPTY_SAFE_HTML
 
     def render(self):
         return format_html(
@@ -173,7 +174,7 @@ class FormRenderer(BaseRenderer):
         super().__init__(**kwargs)
 
     def render_fields(self):
-        rendered_fields = mark_safe("")
+        rendered_fields = EMPTY_SAFE_HTML
         kwargs = self.get_kwargs()
         for field in self.form:
             rendered_fields += render_field(field, **kwargs)
@@ -206,7 +207,7 @@ class FormRenderer(BaseRenderer):
                 },
             )
 
-        return mark_safe("")
+        return EMPTY_SAFE_HTML
 
     def render(self):
         errors = self.render_errors(self.alert_error_type)
@@ -331,6 +332,10 @@ class FieldRenderer(BaseRenderer):
             widget, ReadOnlyPasswordHashWidget
         ):
             before.append("form-control-static")
+        if ReadOnlyPasswordHashWidget is not None and isinstance(
+            widget, ReadOnlyPasswordHashWidget
+        ):
+            before.append("form-control-plaintext")
         elif isinstance(widget, Select):
             before.append("form-select")
             size_prefix = "form-select"
@@ -354,6 +359,11 @@ class FieldRenderer(BaseRenderer):
 
         classes = before + classes
         widget.attrs["class"] = merge_css_classes(*classes)
+
+        # Add button size class for RadioSelectButtonGroup
+        if isinstance(widget, RadioSelectButtonGroup):
+            btn_size_class = get_size_class(self.size, prefix="btn", skip=["xs", "md"])
+            widget.attrs["btn_size_class"] = btn_size_class
 
     def add_placeholder_attrs(self, widget=None):
         """Add placeholder attribute to widget."""
@@ -407,15 +417,15 @@ class FieldRenderer(BaseRenderer):
 
     def get_label_html(self, horizontal=False):
         """Return value for label."""
-        label_html = "" if self.show_label == "skip" else self.field.label
+        if self.show_label == "skip":
+            return EMPTY_SAFE_HTML
+
         label_for = self.field.id_for_label
-        if label_html:
-            label_html = render_label(
-                label_html,
-                label_for=label_for,
-                label_class=self.get_label_class(horizontal=horizontal),
-            )
-        return label_html
+        return render_label(
+            self.field.label,
+            label_for=label_for,
+            label_class=self.get_label_class(horizontal=horizontal),
+        )
 
     def get_help_html(self):
         """Return HTML for help text."""
@@ -431,7 +441,7 @@ class FieldRenderer(BaseRenderer):
                     "show_help": self.show_help,
                 },
             )
-        return ""
+        return EMPTY_SAFE_HTML
 
     def get_errors_html(self):
         """Return HTML for field errors."""
@@ -446,7 +456,7 @@ class FieldRenderer(BaseRenderer):
                     "show_help": self.show_help,
                 },
             )
-        return ""
+        return EMPTY_SAFE_HTML
 
     def get_server_side_validation_classes(self):
         """Return CSS classes for server-side validation."""
@@ -501,7 +511,7 @@ class FieldRenderer(BaseRenderer):
 
     def render(self):
         if self.field.name in self.exclude.replace(" ", "").split(","):
-            return mark_safe("")
+            return EMPTY_SAFE_HTML
         if self.field.is_hidden:
             return text_value(self.field)
 
@@ -511,6 +521,10 @@ class FieldRenderer(BaseRenderer):
             label = self.get_label_html()
             field = field + label
             label = mark_safe("")
+            horizontal_class = merge_css_classes(
+                self.horizontal_field_class, self.horizontal_field_offset_class
+            )
+            label = EMPTY_SAFE_HTML
             horizontal_class = merge_css_classes(
                 self.horizontal_field_class, self.horizontal_field_offset_class
             )

@@ -1,11 +1,38 @@
 # Changelog
 
-## In development
+## 26.2 (2026-02-08)
+
+- Add size parameter support for RadioSelectButtonGroup widget (#789, thanks sgordon16)
+- Fix FieldRenderer label_html function returning unsafe html (#805, thanks @lyndonscotthumphris)
+- Add extra_classes to pagination tag (#765).
+
+## 26.1 (2026-01-03)
+
+- Change form-control-static to form-control-plaintext (#787).
+- Refactor release workflow to tag-based publishing via GitHub (#802).
+- Remove tests folder from coverage source (#801).
+- Add smoke test (#799).
+- Fix tests for Django 6 (#797, #798).
+- Fix tox and CI (#793, #794, #795).
+- Drop support for Django 5.1 (EOL) (#793).
+
+## 25.3 (2025-11-14)
+
+- Return safe HTML while minimizing use of mark_safe (#782, thanks @lyndonscotthumphris #778).
+- Remove support for Python 3.9 (EOL) (#779, #781).
+- Make sure that field errors are always visible (#767, @xi).
+- Add support for Python 3.14 (#774).
+- Add support for Django 6.0 (#773).
+- Update settings.rst (#756, @inpool).
+
+## 25.2 (2025-07-30)
 
 - Fix help text and error IDs for aria-describedby (#746, thanks @xi).
 - Symlink CHANGELOG.md into docs for Sphinx (#750).
 - Drop support for Django 5.0 (EOL) (#751).
-- Add support for Django 5.2 ().
+- Add support for Django 5.2 (#753).
+- Uset `setup-uv` and `uv build` (#759).
+- Use `uv.lock` in GitHub Actions (#760).
 
 ## 25.1 (2025-03-01)
 
